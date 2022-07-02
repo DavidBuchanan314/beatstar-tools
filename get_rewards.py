@@ -1,7 +1,8 @@
 import io
 from datetime import datetime
 
-from login import FlamingoSession
+from login import FlamingoSession, pprint
+from gameconfig import GameConfig
 import raksha
 import protos
 
@@ -11,8 +12,33 @@ def timefmt(n):
 	except ValueError:
 		return "Forever"
 
+def reward_to_string(reward_info):
+	strings = []
+	for reward in reward_info["rewards"]["rewards"]:
+		rtype = reward["reward_type"]
+		if rtype == 2 and reward["bar"]["foo"] == 3:
+			strings.append(f'{reward["bar"]["gem_count"]} gems')
+		elif rtype == 6:
+			level_id = reward["bar"]["foo"]
+			strings.append(f'Song: {config.level_names[level_id]}')
+		elif rtype == 8:
+			gacha_id = reward["bar"]["foo"]
+			gachabox = config.gachaboxes[gacha_id]
+			boxname = config.xlate[gachabox["name_xlate"]]
+			cardtype = count = gachabox["contents"]["cards"][0]["cardtype"]
+			count = gachabox["contents"]["cards"][0]["cardcount"]
+			strings.append(f"{count}x {boxname} {config.cardtypes[cardtype]['id_name']}")
+		elif rtype == 11:
+			duration_ms = reward["bar"]["foo"]
+			duration_mins = duration_ms/1000/60
+			strings.append(f"unlimited play ({duration_mins} mins)")
+		else:
+			strings.append("UNKNOWN")
+	return ", ".join(strings)
+
 session = FlamingoSession()
 config_bin, version = session.get_resource("LiveOpsDeeplinkRewardConfig")
+config = GameConfig(session)
 
 print("Current version:", version)
 print()
@@ -25,5 +51,7 @@ for reward in reward_config["rewards"]:
 
 	print()
 	print("Name:", reward["name"])
+	print("Description:", reward_to_string(reward))
 	print("Validity:", timefmt(start), timefmt(end))
 	print("Deeplink:", "beatstar://?promo_id=" + reward["promo_id"])
+	#pprint(reward)

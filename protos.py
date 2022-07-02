@@ -150,6 +150,31 @@ gameconf_proto = {
 	#107: ("emojis", PackedMessage({})),
 	#109: ("effects", PackedMessage({})),
 	#110: ("tags", PackedMessage({})),
+	119: ("gachaboxes", PackedMessage({
+		1: ("id", Varint()),
+		2: ("id_name", String()),
+		28: ("unk0", PackedMessage({
+			1: ("???", {
+				2: ("???", PackedMessage({
+					2: ("???", {})
+				}))
+			}),
+		})),
+		33: ("contents", {
+			2: ("cards", PackedMessage({
+				1: ("cardtype", Varint()),
+				2: ("cardcount", Varint()),
+			}))
+		}),
+		37: ("name_xlate", String()),
+	})),
+	144: ("cardtypes", PackedMessage({
+		1: ("id", Varint()),
+		2: ("id_name", String()),
+		11: ("???", {})
+	})),
+	145: ("cardboxes", PackedMessage({})), # has info about how many you need to unlock the next song from that box, display names
+	146: ("cardfoo",  PackedMessage({})),
 	148: ("beatmaps", {
 		1: ("id", Varint()), # maps to the number in beatmap file name, and id in headers
 		2: ("idLabel", String()), # matches those in beatmap file headers
@@ -157,7 +182,22 @@ gameconf_proto = {
 		5: ("unk0", Varint()), # perhaps something to do with score normalisation? the max score maybe? It's always a multiple of 50!
 		13: ("hash", String()), # not sure what this is *exactly*
 		15: ("difficulty", String())
-	})
+	}),
+	174: ("songboxes", PackedMessage({
+		1: ("id", Varint()),
+		2: ("name", String()),
+		3: ("info", {
+			13: ("foo", {
+				2: ("bar", {})
+			})
+		})
+	})),
+	177: ("shopitems", PackedMessage({
+
+	})),
+	1017: ("loadingtips", {
+		2: ("tips", String())
+	}),
 }
 
 langconf_proto = {

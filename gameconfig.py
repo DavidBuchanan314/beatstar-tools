@@ -37,6 +37,11 @@ class GameConfig():
 			for level_id, level in sorted(self.levels.items())
 		}
 
+		self.tips = [self.xlate[tip] for tip in self.config["loadingtips"]["tips"]]
+
+		self.gachaboxes = {box['id']: box for box in self.config["gachaboxes"]}
+		self.cardtypes = {ctype['id']: ctype for ctype in self.config["cardtypes"]}
+
 
 if __name__ == "__main__":
 	config = GameConfig()
