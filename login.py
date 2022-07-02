@@ -27,6 +27,7 @@ class FlamingoSession():
 		
 		self.authenticated = False
 		self.resource_urls = None
+		self.resource_cache = {}
 
 		self.packet_index = 1
 	
@@ -153,6 +154,7 @@ class FlamingoSession():
 			}
 		
 		self.resource_urls = resources
+		self.resource_cache = {} # TODO: selectively invalidate cache based on versions
 
 		return resources
 	
@@ -160,10 +162,15 @@ class FlamingoSession():
 		if not self.resource_urls:
 			self.get_cms_urls()
 		
+		if name in self.resource_cache:
+			return self.resource_cache["name"][1]
+
 		url = self.resource_urls[name]["url"]
 		version = self.resource_urls[name]["version"]
 
 		resource = gzip.decompress(requests.get(url).content)
+
+		self.resource_cache[name] = (version, resource)
 
 		return resource, version
 

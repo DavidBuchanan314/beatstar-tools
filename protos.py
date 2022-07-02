@@ -1,4 +1,4 @@
-from raksha import String, Varint, PackedMessage
+from raksha import String, Varint, PackedMessage, Float
 
 # login stuff
 
@@ -124,4 +124,90 @@ assetpatch_proto = {
 		9: ("old_length", Varint()),
 		10: ("old_crc32", Varint()),
 	}))
+}
+
+gameconf_proto = {
+	1000: ("version", String()),
+	3: ("track_and_beatmap_pairs", { # seems to join audio files and beatmaps
+		1: ("id", Varint()),
+		21: ("track_id", Varint()), # matches id used in track_infos list 
+		37: ("codename", String()), # vaguely human readable descriptor
+		46: ("beatmap_id", Varint()) # matches beatmap filename
+	}),
+	25: ("track_infos", {
+		1: ("id", Varint()),
+		19: ("hash", String()),
+		66: ("tstfile", String()),
+		76: ("title", String()),
+		77: ("artist", String()),
+	}),
+	102: ("categories", PackedMessage({})),
+	105: ("artists", PackedMessage({
+		1: ("artist_id", Varint()),
+		2: ("artist_name", String()),
+		3: ("artist_name_short", String()),
+	})),
+	#107: ("emojis", PackedMessage({})),
+	#109: ("effects", PackedMessage({})),
+	#110: ("tags", PackedMessage({})),
+	148: ("beatmaps", {
+		1: ("id", Varint()), # maps to the number in beatmap file name, and id in headers
+		2: ("idLabel", String()), # matches those in beatmap file headers
+		3: ("track_id", Varint()), # seems to be the first number in the above?
+		5: ("unk0", Varint()), # perhaps something to do with score normalisation? the max score maybe? It's always a multiple of 50!
+		13: ("hash", String()), # not sure what this is *exactly*
+		15: ("difficulty", String())
+	})
+}
+
+langconf_proto = {
+	1: ("translations", {
+		1: ("key", String()),
+		2: ("values", {
+			1: ("locale", String()),
+			2: ("translation", String())
+		})
+	}),
+	2: ("languages", {
+
+	}),
+	100: ("version", String())
+}
+
+interaction_position_proto = {
+	1: ("pos", Float()),
+	2: ("range", {
+		1: ("top", Float()),
+		2: ("bottom", Float())
+	})
+}
+
+beatmap_proto = {
+	1: ("id", Varint()),
+	2: ("idLabel", String()),
+	5: ("interactionData", PackedMessage({
+		1: ("interactionType", Varint()),
+		3: ("tapInteractionData", {
+			1: ("position", interaction_position_proto)
+		}),
+		4: ("dragInteractionData", {
+			1: ("position", interaction_position_proto)
+		}),
+		6: ("track", Varint()), # looks like this defaults to 1 if not present
+		13: ("MYSTERY", Varint()),
+	})),
+	6: ("sections", PackedMessage({
+		1: ("f", Float()),
+	})),
+	7: ("blah2", PackedMessage({
+		1: ("f0", Float()),
+		2: ("f1", Float()),
+	})),
+	8: ("blah3", PackedMessage({
+		1: ("f0", Float()),
+		2: ("f1", Float()),
+	})),
+	9: ("blah4", PackedMessage({
+		1: ("f", Float()),
+	})),
 }
