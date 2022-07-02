@@ -17,9 +17,9 @@ config_bin, version = session.get_resource("LiveOpsDeeplinkRewardConfig")
 print("Current version:", version)
 print()
 
-config = raksha.parse_proto(io.BytesIO(config_bin), protos.rewards_proto)
+reward_config = raksha.parse_proto(io.BytesIO(config_bin), protos.rewards_proto)
 
-for reward in config["rewards"]:
+for reward in reward_config["rewards"]:
 	start = reward.get("start", 0)
 	end = reward.get("end", 0)
 
