@@ -46,3 +46,4 @@ class GameConfig():
 if __name__ == "__main__":
 	config = GameConfig()
 	pprint(config.config)
+	#pprint(config.xlate)

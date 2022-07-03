@@ -1,4 +1,4 @@
-from raksha import String, Varint, PackedMessage, Float
+from raksha import String, Varint, Packed, Float, Bytes
 
 # login stuff
 
@@ -90,22 +90,24 @@ cms_res_proto = {
 	})
 }
 
+reward_proto = {
+	1: ("reward_type", Varint()), # 11=unlimited_play, 8=cards, 2=gems, 6=song
+	2: ("bar", {
+		1: ("foo", Varint()), # enum gems=3, unlimited_play=1800000, 2hardcards=117, alternativecards=154, popcards=153, rockcards=151, wishlist10=608, rainbow2=610
+		2: ("gem_count", Varint()),
+	})
+}
+
 rewards_proto = {
 	100: ("version", String()),
-	1: ("rewards", PackedMessage({
+	1: ("rewards", Packed({
 		1: ("promo_id", String()),
 		2: ("name", String()),
 		3: ("unk0", Varint()),
 		5: ("start", Varint()),
 		6: ("end", Varint()),
 		7: ("rewards", {
-			1: ("rewards", PackedMessage({
-				1: ("reward_type", Varint()), # 11=unlimited_play, 8=cards, 2=gems, 6=song
-				2: ("bar", {
-					1: ("foo", Varint()), # enum gems=3, unlimited_play=1800000, 2hardcards=117, alternativecards=154, popcards=153, rockcards=151, wishlist10=608, rainbow2=610
-					2: ("gem_count", Varint()),
-				})
-			}))
+			1: ("rewards", Packed(reward_proto))
 		}),
 		8: ("url", String())
 	})),
@@ -115,7 +117,7 @@ assetpatch_proto = {
 	1: ("version", String()),
 	6: ("url_base", String()),
 	7: ("subdir", String()),
-	4: ("assets", PackedMessage({
+	4: ("assets", Packed({
 		1: ("name", String()),
 		5: ("hash", String()),
 		6: ("length", Varint()),
@@ -128,6 +130,8 @@ assetpatch_proto = {
 
 gameconf_proto = {
 	1000: ("version", String()),
+	1018: ("unk_xxx", {}),
+	#1048: ("unk_xxx2", {}),
 	3: ("track_and_beatmap_pairs", { # seems to join audio files and beatmaps
 		1: ("id", Varint()),
 		21: ("track_id", Varint()), # matches id used in track_infos list 
@@ -141,49 +145,95 @@ gameconf_proto = {
 		76: ("title", String()),
 		77: ("artist", String()),
 	}),
-	102: ("categories", PackedMessage({})),
-	105: ("artists", PackedMessage({
+	88: ("blahsdasdfasdf", Packed({
+		
+	})),
+	102: ("categories", Packed({
+		6: ("genre_id", Varint()),
+	})),
+	105: ("artists", Packed({
 		1: ("artist_id", Varint()),
 		2: ("artist_name", String()),
 		3: ("artist_name_short", String()),
 	})),
-	#107: ("emojis", PackedMessage({})),
-	#109: ("effects", PackedMessage({})),
-	#110: ("tags", PackedMessage({})),
-	119: ("gachaboxes", PackedMessage({
+	107: ("emojis", Packed({})),
+	109: ("effects", Packed({})),
+	110: ("song_tags", Packed({})),
+	115: ("banners", Packed({})),
+	116: ("bundle_tiers", Packed({})),
+	117: ("bundle_something", Packed({
+		7: ("???", {
+			1: ("???", Packed(reward_proto))
+		}),
+	})),
+	119: ("gachaboxes", Packed({
 		1: ("id", Varint()),
 		2: ("id_name", String()),
-		28: ("unk0", PackedMessage({
+		18: ("???", {
+			1: ("???", Packed({
+			})),
+		}),
+		25: ("blah", {}),
+		28: ("unk0", Packed({
 			1: ("???", {
-				2: ("???", PackedMessage({
+				2: ("???", Packed({
 					2: ("???", {})
 				}))
 			}),
 		})),
 		33: ("contents", {
-			2: ("cards", PackedMessage({
+			2: ("cards", Packed({
 				1: ("cardtype", Varint()),
 				2: ("cardcount", Varint()),
 			}))
 		}),
 		37: ("name_xlate", String()),
 	})),
-	144: ("cardtypes", PackedMessage({
+	121: ("shop_items", Packed({
+		4: ("foo", {
+			2: ("bar", Packed({
+				2: ("bat", {}),
+			}))
+		})
+	})),
+ 	124: ("bundles", Packed({
+		20: ("unk0", {})
+	})),
+	124: ("bundle_related", Packed({
+	})),
+	141: ("skill_level", Packed({})),
+	144: ("cardtypes", Packed({
 		1: ("id", Varint()),
 		2: ("id_name", String()),
 		11: ("???", {})
 	})),
-	145: ("cardboxes", PackedMessage({})), # has info about how many you need to unlock the next song from that box, display names
-	146: ("cardfoo",  PackedMessage({})),
+	145: ("cardboxes", Packed({})), # has info about how many you need to unlock the next song from that box, display names
+	146: ("cardfoo",  Packed({})),
 	148: ("beatmaps", {
 		1: ("id", Varint()), # maps to the number in beatmap file name, and id in headers
 		2: ("idLabel", String()), # matches those in beatmap file headers
 		3: ("track_id", Varint()), # seems to be the first number in the above?
-		5: ("unk0", Varint()), # perhaps something to do with score normalisation? the max score maybe? It's always a multiple of 50!
+		5: ("max_score", Varint()), # perhaps something to do with score normalisation? the max score maybe? It's always a multiple of 50!
+		6: ("difficulty_id", Varint()), # 1=Extreme, 3=Hard, 4=Normal
+		9: ("MAYBE_IS_COMPLETE", Varint()),
 		13: ("hash", String()), # not sure what this is *exactly*
 		15: ("difficulty", String())
 	}),
-	174: ("songboxes", PackedMessage({
+	150: ("journey_variants", Packed({
+		1: ("name", String()),
+		3: ("tutorial_songs", Packed(Varint())),
+		4: ("event_songs", Packed(Varint())),
+		5: ("levels", Packed({
+			1: ("level", Varint()),
+			2: ("songs", Packed(Varint())),
+		})),
+	})),
+	167: ("season_lvl_stuff", Packed({
+		3: ("season_number", Varint()),
+		5: ("free_reward", reward_proto),
+		6: ("premium_reward", reward_proto),
+	})),
+	174: ("songboxes", Packed({
 		1: ("id", Varint()),
 		2: ("name", String()),
 		3: ("info", {
@@ -192,8 +242,13 @@ gameconf_proto = {
 			})
 		})
 	})),
-	177: ("shopitems", PackedMessage({
-
+	177: ("shopitems", Packed({
+		5: ("???", {}),
+		10: ("maaaaaybe_rewards", Packed(reward_proto)),
+		11: ("bonus_reward", Packed(reward_proto))
+	})),
+	179: ("tierbundles", Packed({
+		2: ("???", {}),
 	})),
 	1017: ("loadingtips", {
 		2: ("tips", String())
@@ -225,7 +280,7 @@ interaction_position_proto = {
 beatmap_proto = {
 	1: ("id", Varint()),
 	2: ("idLabel", String()),
-	5: ("interactionData", PackedMessage({
+	5: ("interactionData", Packed({
 		1: ("interactionType", Varint()),
 		3: ("tapInteractionData", {
 			1: ("position", interaction_position_proto)
@@ -236,18 +291,37 @@ beatmap_proto = {
 		6: ("track", Varint()), # looks like this defaults to 1 if not present
 		13: ("MYSTERY", Varint()),
 	})),
-	6: ("sections", PackedMessage({
+	6: ("sections", Packed({
 		1: ("f", Float()),
 	})),
-	7: ("blah2", PackedMessage({
+	7: ("blah2", Packed({
 		1: ("f0", Float()),
 		2: ("f1", Float()),
 	})),
-	8: ("blah3", PackedMessage({
+	8: ("blah3", Packed({
 		1: ("f0", Float()),
 		2: ("f1", Float()),
 	})),
-	9: ("blah4", PackedMessage({
+	9: ("blah4", Packed({
 		1: ("f", Float()),
 	})),
+}
+
+liveops_bundle_proto = {
+	100: ("version", String()),
+	1: ("bundles", Packed({
+		2: ("contents", {
+			1: ("rewards", Packed(reward_proto))
+		}),
+		4: ("id_name", String()),
+		6: ("unk1", {
+			13: ("???", {
+				2: ("???", {
+					1: ("???", {})
+				})
+			})
+		}),
+		14: ("image_a", {}),
+		19: ("name", String()),
+	}))
 }

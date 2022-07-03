@@ -25,7 +25,7 @@ class Float():
 	def __init__(self):
 		pass
 
-class PackedMessage():
+class Packed():
 	def __init__(self, proto):
 		self.proto = proto
 
@@ -85,12 +85,14 @@ def parse_unknown_repeated(stream):
 		body = stream.read(length)
 		chunks.append(parse_unknown_message(io.BytesIO(body)))
 
-def parse_proto(stream, proto={}, wire_type=None):
+def parse_proto(stream, proto={}, wire_type=None, top_level=True):
 	if type(proto) is dict:
 		if wire_type is not None:
 			assert(wire_type == 2)
+		if not top_level:
 			length = parse_varint(stream)
-			assert(length is not None)
+			if length is None:
+				return None
 			substream_bytes = stream.read(length)
 			assert(len(substream_bytes) == length)
 			stream = io.BytesIO(substream_bytes)
@@ -101,7 +103,7 @@ def parse_proto(stream, proto={}, wire_type=None):
 				break
 			field, wire_type = get_field_and_type(tag)
 			field_name, field_proto = proto.get(field, (field, None))
-			value = parse_proto(stream, field_proto, wire_type=wire_type)
+			value = parse_proto(stream, field_proto, wire_type=wire_type, top_level=False)
 			if value is None:
 				break
 			if field_name in fields:
@@ -114,7 +116,8 @@ def parse_proto(stream, proto={}, wire_type=None):
 				fields[field_name] = value
 		return fields
 	elif type(proto) is String:
-		assert(wire_type == 2)
+		if wire_type is not None:
+			assert(wire_type == 2)
 		length = parse_varint(stream)
 		if length is None:
 			return None
@@ -122,7 +125,8 @@ def parse_proto(stream, proto={}, wire_type=None):
 		assert(len(string) == length)
 		return string.decode()
 	elif type(proto) is Bytes:
-		assert(wire_type == 2)
+		if wire_type is not None:
+			assert(wire_type == 2)
 		length = parse_varint(stream)
 		if length is None:
 			return None
@@ -130,13 +134,16 @@ def parse_proto(stream, proto={}, wire_type=None):
 		assert(len(string) == length)
 		return string
 	elif type(proto) is Varint:
-		assert(wire_type == 0)
+		if wire_type is not None:
+			assert(wire_type == 0)
 		return parse_varint(stream)
 	elif type(proto) is Float:
-		assert(wire_type == 5)
+		if wire_type is not None:
+			assert(wire_type == 5)
 		return struct.unpack("<f", stream.read(4))[0]
-	elif type(proto) is PackedMessage:
-		assert(wire_type == 2)
+	elif type(proto) is Packed:
+		if wire_type is not None:
+			assert(wire_type == 2)
 		length = parse_varint(stream)
 		if length is None:
 			return None
@@ -146,6 +153,7 @@ def parse_proto(stream, proto={}, wire_type=None):
 		#return parse_unknown_repeated(substream)
 		messages = []
 		while True:
+			"""
 			subsubstream_len = parse_varint(substream)
 			if subsubstream_len is None:
 				break
@@ -153,6 +161,8 @@ def parse_proto(stream, proto={}, wire_type=None):
 			assert(len(subsubstream_bytes) == subsubstream_len)
 			subsubstream = io.BytesIO(subsubstream_bytes)
 			msg = parse_proto(subsubstream, proto.proto)
+			"""
+			msg = parse_proto(substream, proto.proto, top_level=False)
 			#msg = parse_unknown_message(subsubstream)
 			if msg is None:
 				break
@@ -178,7 +188,7 @@ def serialize_field_and_type(stream, field, type):
 	serialize_varint(stream, (field << 3) | type)
 
 def serialize_proto(stream, data, proto={}, field=None):
-	if type(proto) is PackedMessage:
+	if type(proto) is Packed:
 		assert(type(data) is list)
 		substream = io.BytesIO()
 		for msg in data:
@@ -227,7 +237,7 @@ if __name__ == "__main__":
 	my_proto = {
 		1: ("foo", Varint()),
 		2: ("bar", String()),
-		3: ("bat", PackedMessage({
+		3: ("bat", Packed({
 			7: ("blah", String())
 		})),
 		4: ("msg", {

@@ -12,9 +12,9 @@ def timefmt(n):
 	except ValueError:
 		return "Forever"
 
-def reward_to_string(reward_info):
+def reward_to_string(config, rewards):
 	strings = []
-	for reward in reward_info["rewards"]["rewards"]:
+	for reward in rewards:
 		rtype = reward["reward_type"]
 		if rtype == 2 and reward["bar"]["foo"] == 3:
 			strings.append(f'{reward["bar"]["gem_count"]} gems')
@@ -34,24 +34,25 @@ def reward_to_string(reward_info):
 			strings.append(f"unlimited play ({duration_mins} mins)")
 		else:
 			strings.append("UNKNOWN")
-	return ", ".join(strings)
+	return strings
 
-session = FlamingoSession()
-config_bin, version = session.get_resource("LiveOpsDeeplinkRewardConfig")
-config = GameConfig(session)
+if __name__ == "__main__":
+	session = FlamingoSession()
+	config_bin, version = session.get_resource("LiveOpsDeeplinkRewardConfig")
+	config = GameConfig(session)
 
-print("Current version:", version)
-print()
-
-reward_config = raksha.parse_proto(io.BytesIO(config_bin), protos.rewards_proto)
-
-for reward in reward_config["rewards"]:
-	start = reward.get("start", 0)
-	end = reward.get("end", 0)
-
+	print("Current version:", version)
 	print()
-	print("Name:", reward["name"])
-	print("Description:", reward_to_string(reward))
-	print("Validity:", timefmt(start), timefmt(end))
-	print("Deeplink:", "beatstar://?promo_id=" + reward["promo_id"])
-	#pprint(reward)
+
+	reward_config = raksha.parse_proto(io.BytesIO(config_bin), protos.rewards_proto)
+
+	for reward in reward_config["rewards"]:
+		start = reward.get("start", 0)
+		end = reward.get("end", 0)
+
+		print()
+		print("Name:", reward["name"])
+		print("Description:", ", ".join(reward_to_string(config, reward["rewards"]["rewards"])))
+		print("Validity:", timefmt(start), timefmt(end))
+		print("Deeplink:", "beatstar://?promo_id=" + reward["promo_id"])
+		#pprint(reward)
