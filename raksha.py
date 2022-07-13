@@ -25,6 +25,10 @@ class Float():
 	def __init__(self):
 		pass
 
+class U32():
+	def __init__(self):
+		pass
+
 class Packed():
 	def __init__(self, proto):
 		self.proto = proto
@@ -187,15 +191,15 @@ def serialize_varint(stream, n):
 def serialize_field_and_type(stream, field, type):
 	serialize_varint(stream, (field << 3) | type)
 
-def serialize_proto(stream, data, proto={}, field=None):
+def serialize_proto(stream, data, proto={}, field=None, top_level=True):
 	if type(proto) is Packed:
 		assert(type(data) is list)
 		substream = io.BytesIO()
 		for msg in data:
 			subsubstream = io.BytesIO()
-			serialize_proto(subsubstream, msg, proto.proto)
+			serialize_proto(subsubstream, msg, proto.proto, top_level=False)
 			subsubstream_bytes = subsubstream.getvalue()
-			serialize_varint(substream, len(subsubstream_bytes))
+			#serialize_varint(substream, len(subsubstream_bytes))
 			substream.write(subsubstream_bytes)
 		substream_bytes = substream.getvalue()
 		serialize_field_and_type(stream, field, 2)
@@ -205,23 +209,25 @@ def serialize_proto(stream, data, proto={}, field=None):
 	# TODO: if data is array, iterate through and recurse, return
 	if type(data) is list:
 		for datum in data:
-			serialize_proto(stream, datum, proto=proto, field=field)
+			serialize_proto(stream, datum, proto=proto, field=field, top_level=False)
 		return
 	# else
 	if type(proto) is dict:
 		substream = io.BytesIO()
 		for key in data.keys():
-			field_number = ([k for k in proto.keys() if proto[k][0] == key]+[None])[0]
-			field_proto = None if field_number is None else proto[field_number][1]
-			serialize_proto(substream, data[key], field_proto, field=field_number)
+			field_number = ([k for k in proto.keys() if proto[k][0] == key]+[key])[0]
+			field_proto = None if field_number is None else (proto[field_number][1] if field_number in proto else None)
+			serialize_proto(substream, data[key], field_proto, field=field_number, top_level=False)
 		substream_bytes = substream.getvalue()
 		if field is not None:
 			serialize_field_and_type(stream, field, 2)
+		if not top_level:
 			serialize_varint(stream, len(substream_bytes))
 		stream.write(substream_bytes)
 	elif type(proto) is Varint:
 		assert(type(data) is int)
-		serialize_field_and_type(stream, field, 0)
+		if field is not None:
+			serialize_field_and_type(stream, field, 0)
 		serialize_varint(stream, data)
 	elif type(proto) is String:
 		assert(type(data) is str)
@@ -229,6 +235,28 @@ def serialize_proto(stream, data, proto={}, field=None):
 		str_bytes = data.encode()
 		serialize_varint(stream, len(str_bytes))
 		stream.write(str_bytes)
+	elif type(proto) is Bytes:
+		assert(type(data) is bytes)
+		serialize_field_and_type(stream, field, 2)
+		serialize_varint(stream, len(data))
+		stream.write(data)
+	elif type(proto) is U32:
+		assert(type(data) is int)
+		serialize_field_and_type(stream, field, 5)
+		stream.write(data.to_bytes(4, "little"))
+
+	elif proto is None: # time to guess
+		if type(data) is tuple and len(data) == 2:
+			if data[0] == "length-delimited":
+				serialize_proto(stream, data[1], proto=Bytes(), field=field)
+				return
+			if data[0] == "fixed32":
+				serialize_proto(stream, int.from_bytes(bytes.fromhex(data[1]), "little"), proto=U32(), field=field)
+				return
+			if data[0] == "varint":
+				serialize_proto(stream, data[1], proto=Varint(), field=field)
+				return
+		raise Exception(f"blah: {data}")
 	else:
 		raise Exception("unknown proto", proto)
 		# TODO: guess based on type of data

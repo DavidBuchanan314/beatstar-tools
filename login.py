@@ -132,7 +132,8 @@ class FlamingoSession():
 					{'name': 'NotificationConfig'},
 					{'name': 'FontFallbackConfig'},
 					{'name': 'LiveOpsBundleConfig', 'locale': 'en'},
-					{'name': 'LiveOpsDeeplinkRewardConfig'}
+					{'name': 'LiveOpsDeeplinkRewardConfig'},
+					{'name': 'MusicKitConfig'}
 				]}
 			},
 			'authenticationTicket': self.authentication_ticket
